@@ -18,10 +18,19 @@ class Resolver():
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, argument=None, stack=None):
+    def __init__(self, argument=None):
         self.logger = logging.getLogger(__name__)
         self.argument = argument
+
+    def _add_stack_reference(self, stack):
         self.stack = stack
+        """
+        An abstract method which must be overwritten by all inheriting classes.
+        This method is called to retrieve the final desired value.
+        Implementation of this method in subclasses must return a suitable
+        object or primitive type.
+        """
+        pass  # pragma: no cover
 
     def setup(self):
         """
@@ -68,13 +77,14 @@ class ResolvableProperty(object):
 
         if hasattr(instance, self.name):
             return self._call_func_on_values(
-                getattr(instance, self.name), "resolve"
+                getattr(instance, self.name), "resolve",
             )
 
     def __set__(self, instance, value):
         self._call_func_on_values(
-            value, "setup", {"stack": instance}
+            value, "_add_stack_reference", {"stack": instance}
         )
+        self._call_func_on_values(value, "setup")
         setattr(instance, self.name, value)
 
     def _call_func_on_values(self, attr, func_name, kwargs=None):
